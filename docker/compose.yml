@@ -1,0 +1,38 @@
+services:
+  qa:
+    image: "python:3.10-alpine"
+    container_name: "qa"
+    environment:
+      Remote: True
+    volumes:
+      - "${SELENIUM_HOME}/:/usr/src/myapp"
+    networks:
+      - selenoid
+    command: sh /usr/src/myapp/run.sh
+  selenoid:
+    image: "aerokube/selenoid"
+    container_name: "selenoid"
+    networks:
+      - selenoid
+    ports:
+      - "4444:4444"
+    volumes:
+      - "${SELENIUM_HOME}/selenoid:/etc/selenoid/:ro"
+      - "/var/run/docker.sock:/var/run/docker.sock"
+    command: -container-network selenoid_default -timeout 10m -limit 10
+  selenoid_ui:
+    image: "aerokube/selenoid-ui"
+    container_name: "selenoid-ui"
+    links:
+      - selenoid
+    networks:
+      - selenoid
+    ports:
+      - "8080:8080"
+    command: [ "--selenoid-uri", "http://selenoid:4444" ]
+
+networks:
+  selenoid:
+    name: "selenoid_default"
+    driver: "bridge"
+
